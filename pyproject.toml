@@ -13,18 +13,25 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
-    "dipcoatimage-finitedepth > 2.0.4",
+    "dipcoatimage-finitedepth >= 2.0.4",
+    "curvesimilarities >= 0.1.2"
 ]
 
 [project.optional-dependencies]
-test = [
-    "dipcoatimage-finitedepth[test]",
-]
 doc = [
-    "dipcoatimage-finitedepth[doc]",
+    "furo",
+    "sphinx",
+    "numpydoc",
 ]
 dev = [
-    "dipcoatimage-finitedepth[dev]",
+    "flake8",
+    "flake8-docstrings",
+    "black",
+    "isort",
+    "docformatter",
+    "doc8",
+    "mypy",
+    "dipcoatimage-finitedepth-ifd[doc]",
 ]
 
 [tool.setuptools.packages.find]
