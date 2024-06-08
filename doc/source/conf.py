@@ -16,14 +16,33 @@ author = "Jisoo Song"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
     "numpydoc",
 ]
 
+autodoc_typehints = "none"
 autodoc_member_order = "bysource"
+autodoc_default_options = {
+    "show-inheritance": True,
+}
+
+intersphinx_mapping = {
+    "finitedepth": ("https://dipcoatimage-finitedepth.readthedocs.io/en/latest", None),
+}
+
+numpydoc_show_class_members = False
+numpydoc_show_inherited_class_members = False
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "furo"
-html_title = "DipCoatImage-FiniteDepth-IFD"
+html_theme = "pydata_sphinx_theme"
+
+html_theme_options = {
+    "github_url": "https://github.com/dipcoat-image/finitedepth-ifd",
+    "logo": {
+        "text": project,
+    },
+    "show_toc_level": 2,
+}
