@@ -19,7 +19,38 @@ AVERAGE_TYPES = (
 
 
 class IfdRoughnessBase(CoatingLayerBase):
-    """Base class for layer roughness measurement with integral Fréchet distance."""
+    """Base class for layer roughness measurement with integral Fréchet distance.
+
+    Roughness can be measured by the similarity between the coating layer profile
+    and the ideal uniform layer profile. In arbitrary geometries, the following
+    integral-based average distances are used:
+
+    - Arithmetic roughness :math:`R_a` : average Fréchet distance.
+    - Quadratic mean roughness :math:`R_q` : quadratic average Fréchet distance.
+
+    Refer to the See Also section for more information about these distances.
+
+    Parameters
+    ----------
+    image, substrate
+        See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
+    average_type : {'arithmetic', 'quadratic'}
+        The type of average Fréchet distance to compute the roughness, either the
+        arithmetic average or the quadratic mean.
+    delta : double
+        The maximum distance between the Steiner points to compute the roughness.
+        Refer to the functions in the See Also section.
+
+    Other Parameters
+    ----------------
+    tempmatch : tuple, optional
+        See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
+
+    See Also
+    --------
+    curvesimilarities.averagefrechet.afd : Average Fréchet distance.
+    curvesimilarities.averagefrechet.qafd : Quadratic average Fréchet distance.
+    """
 
     def __init__(
         self,
@@ -28,7 +59,7 @@ class IfdRoughnessBase(CoatingLayerBase):
         average_type: str,
         delta: float,
         *,
-        tempmatch: tuple[tuple[int, ...], float] | None = None,
+        tempmatch: tuple[tuple[int, int], float] | None = None,
     ):
         """Check parameter types and values."""
         if average_type not in AVERAGE_TYPES:
@@ -43,16 +74,42 @@ class IfdRoughnessBase(CoatingLayerBase):
 
     @abc.abstractmethod
     def surface(self) -> npt.NDArray[np.int32]:
-        """Coating layer surface."""
+        """Coating layer surface.
+
+        Returns
+        -------
+        ndarray
+            An :math:`N` by :math:`2` array containing the :math:`xy`-coordinates
+            of :math:`N` points which constitute the coating layer surface curve.
+        """
         ...
 
     @abc.abstractmethod
     def uniform_layer(self) -> npt.NDArray[np.float_]:
-        """Imaginary, ideal uniform layer."""
+        """Imaginary, ideal uniform layer.
+
+        Returns
+        -------
+        ndarray
+            An :math:`M` by :math:`2` array containing the :math:`xy`-coordinates
+            of :math:`M` points which constitute the uniform layer curve.
+        """
         ...
 
     def roughness(self) -> tuple[float, npt.NDArray[np.float_]]:
-        """Integral Fréchet distance-based surface roughness of the coating layer."""
+        """Surface roughness of the coating layer.
+
+        The roughness is acquired by computing the similarity between
+        :meth:`surface` and :meth:`uniform_layer`.
+
+        Returns
+        -------
+        roughness : double
+            Roughness value.
+        path : ndarray
+            An :math:`P` by :math:`2` array representing the optimal warping path
+            in the parameter space.
+        """
         if self.average_type == "arithmetic":
             roughness, path = afd_owp(self.surface(), self.uniform_layer(), self.delta)
         elif self.average_type == "quadratic":

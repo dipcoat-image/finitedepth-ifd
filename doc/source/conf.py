@@ -28,6 +28,7 @@ autodoc_default_options = {
 
 intersphinx_mapping = {
     "finitedepth": ("https://dipcoatimage-finitedepth.readthedocs.io/en/latest", None),
+    "curvesimilarities": ("https://curvesimilarities.readthedocs.io/en/latest", None),
 }
 
 numpydoc_show_class_members = False
