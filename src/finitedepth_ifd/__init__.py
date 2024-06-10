@@ -5,7 +5,7 @@ import abc
 import numpy as np
 import numpy.typing as npt
 from curvesimilarities import afd_owp, qafd_owp  # type: ignore[import-untyped]
-from finitedepth import CoatingLayerBase, SubstrateBase
+from finitedepth.coatinglayer import SubstTypeVar, DataTypeVar
 
 __all__ = [
     "IfdRoughnessBase",
@@ -18,7 +18,7 @@ AVERAGE_TYPES = (
 )
 
 
-class IfdRoughnessBase(CoatingLayerBase):
+class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
     """Base class for layer roughness measurement with integral Fréchet distance.
 
     Roughness can be measured by the similarity between the coating layer profile
