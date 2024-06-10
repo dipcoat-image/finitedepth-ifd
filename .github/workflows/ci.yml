@@ -64,7 +64,7 @@ jobs:
           pip install . mypy
 
       - name: run mypy check
-        run: mypy src
+        run: mypy
 
   doc:
 

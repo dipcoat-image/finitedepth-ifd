@@ -55,10 +55,7 @@ ignore-path = [
 ]
 
 [tool.mypy]
-namespace_packages = true
-explicit_package_bases = true
-exclude = ["build"]
-plugins = ["numpy.typing.mypy_plugin"]
+packages = "finitedepth_ifd"
 
 [tool.pytest.ini_options]
 doctest_optionflags = [
