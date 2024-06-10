@@ -22,6 +22,7 @@ doc = [
     "sphinx",
     "numpydoc",
     "pydata-sphinx-theme",
+    "matplotlib",
 ]
 dev = [
     "flake8",
