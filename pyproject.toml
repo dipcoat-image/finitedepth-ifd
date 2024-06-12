@@ -14,7 +14,7 @@ requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
     "dipcoatimage-finitedepth >= 2.0.5",
-    "curvesimilarities >= 0.1.4"
+    "curvesimilarities >= 0.1.5"
 ]
 
 [project.optional-dependencies]

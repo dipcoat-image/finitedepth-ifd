@@ -23,9 +23,6 @@ extensions = [
 
 autodoc_typehints = "none"
 autodoc_member_order = "bysource"
-autodoc_default_options = {
-    "show-inheritance": True,
-}
 
 intersphinx_mapping = {
     "finitedepth": ("https://dipcoatimage-finitedepth.readthedocs.io/en/latest", None),

@@ -18,11 +18,13 @@ from curvesimilarities import afd_owp, qafd_owp  # type: ignore[import-untyped]
 from finitedepth import CoatingLayerBase, RectSubstrate
 from finitedepth.cache import attrcache
 from finitedepth.coatinglayer import DataTypeVar, SubstTypeVar, parallel_curve
+from scipy.interpolate import splev, splprep  # type: ignore
 from scipy.optimize import root  # type: ignore
 
 __all__ = [
     "IfdRoughnessBase",
     "RectIfdRoughness",
+    "RectIfdRoughnessData",
 ]
 
 
@@ -100,6 +102,7 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
         """
         ...
 
+    @attrcache("_roughness")
     def roughness(self) -> tuple[float, npt.NDArray[np.float_]]:
         """Surface roughness of the coating layer.
 
@@ -132,7 +135,13 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
 
 @dataclasses.dataclass
 class RectIfdRoughnessData:
-    """Analysis data for :class:`RectIfdRoughness`."""
+    """Analysis data for :class:`RectIfdRoughness`.
+
+    Attributes
+    ----------
+    Roughness : float
+        Coating layer roughness.
+    """
 
     Roughness: float
 
@@ -180,7 +189,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
     ...     cv2.threshold(target_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1],
     ...     subst,
     ...     "arithmetic",
-    ...     1.0,
+    ...     5.0,
     ...     (1, 1),
     ...     50,
     ... )
@@ -327,6 +336,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
             idx = idx[[0, -1]]
         return idx
 
+    @attrcache("_surface")
     def surface(self) -> npt.NDArray[np.int32]:
         """See :meth:`IfdRoughnessBase.surface`."""
         idxs = self.interface_indices()
@@ -344,6 +354,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
 
         return np.squeeze(cnt[I0 : I1 + 1], axis=1)
 
+    @attrcache("_uniform_layer")
     def uniform_layer(self) -> npt.NDArray[np.float_]:
         """See :meth:`IfdRoughnessBase.uniform_layer`."""
         idxs = self.interface_indices()
@@ -357,18 +368,85 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         return np.squeeze(parallel_curve(subst_cnt, t), axis=1)
 
     def analyze(self) -> RectIfdRoughnessData:
-        """Return roughness.
+        """Return analysis result.
 
         Returns
         -------
-        dataclass
-            Dataclass containing the roughness.
+        :class:`RectIfdRoughnessData`
         """
         return self.DataType(self.roughness()[0])
 
-    def draw(self) -> npt.NDArray[np.uint8]:
-        """Visualize image."""
-        return self.image
+    def draw(self, pairs_dist: float = 20.0) -> npt.NDArray[np.uint8]:
+        """Visualize the analysis result.
+
+        Draws the surface, the uniform layer, and the roughness pairs.
+
+        Parameters
+        ----------
+        pairs_dist : float
+            Distance between the roughness pairs in the IFD parameter space.
+            Decreasing this value increases the density of pairs.
+        """
+        image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB).astype(np.uint8)
+        if not self.valid():
+            return image
+
+        image[self.extract_layer()] = 255
+
+        cv2.polylines(
+            image,
+            [self.surface().reshape(-1, 1, 2).astype(np.int32)],
+            isClosed=False,
+            color=(0, 0, 255),
+            thickness=1,
+        )
+        cv2.polylines(
+            image,
+            [self.uniform_layer().reshape(-1, 1, 2).astype(np.int32)],
+            isClosed=False,
+            color=(255, 0, 0),
+            thickness=1,
+        )
+
+        _, path = self.roughness()
+        path_len = np.sum(np.linalg.norm(np.diff(path, axis=0), axis=-1), axis=0)
+        tck, _ = splprep(path.T, k=1, s=0)
+        u = np.linspace(0, 1, int(path_len // pairs_dist))
+        pairs = np.stack(splev(u, tck)).T
+
+        surf_seg_vec = np.diff(self.surface(), axis=0)
+        surf_seg_len = np.linalg.norm(surf_seg_vec, axis=-1)
+        surf_seg_unitvec = surf_seg_vec / surf_seg_len[..., np.newaxis]
+        surf_vert = np.cumsum(surf_seg_len)
+        pairs_surf_vert_idx = np.searchsorted(surf_vert, pairs[:, 0])
+
+        p = self.surface()[pairs_surf_vert_idx]
+        t = pairs[:, 0] - np.insert(surf_vert, 0, 0)[pairs_surf_vert_idx]
+        u = surf_seg_unitvec[pairs_surf_vert_idx]
+        pairs_surf_pt = (p + t[..., np.newaxis] * u).astype(np.int32)
+
+        ul_seg_vec = np.diff(self.uniform_layer(), axis=0)
+        ul_seg_len = np.linalg.norm(ul_seg_vec, axis=-1)
+        ul_seg_unitvec = ul_seg_vec / ul_seg_len[..., np.newaxis]
+        ul_vert = np.cumsum(ul_seg_len)
+        pairs_ul_vert_idx = np.searchsorted(ul_vert, pairs[:, 1])
+
+        q = self.uniform_layer()[pairs_ul_vert_idx]
+        s = pairs[:, 1] - np.insert(ul_vert, 0, 0)[pairs_ul_vert_idx]
+        v = ul_seg_unitvec[pairs_ul_vert_idx]
+        pairs_ul_pt = (q + s[..., np.newaxis] * v).astype(np.int32)
+
+        pairs_pts = np.stack([pairs_surf_pt, pairs_ul_pt])[np.newaxis, ...]
+
+        cv2.polylines(
+            image,
+            pairs_pts.transpose(2, 1, 0, 3),
+            isClosed=False,
+            color=(0, 255, 0),
+            thickness=1,
+        )
+
+        return image
 
 
 def _uniform_layer_area(thickness, subst, x0):
