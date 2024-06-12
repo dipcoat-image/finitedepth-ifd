@@ -13,11 +13,10 @@ from functools import partial
 
 import cv2
 import numpy as np
-import numpy.typing as npt
 from curvesimilarities import afd_owp, qafd_owp  # type: ignore[import-untyped]
-from finitedepth import CoatingLayerBase, RectSubstrate
+from finitedepth import CoatingLayerBase
 from finitedepth.cache import attrcache
-from finitedepth.coatinglayer import DataTypeVar, SubstTypeVar, parallel_curve
+from finitedepth.coatinglayer import parallel_curve
 from scipy.interpolate import splev, splprep  # type: ignore
 from scipy.optimize import root  # type: ignore
 
@@ -34,7 +33,7 @@ ROUGHNESS_TYPES = (
 )
 
 
-class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
+class IfdRoughnessBase(CoatingLayerBase):
     """Base class to measure layer surface roughness with integral Fréchet distance.
 
     The following types of roughness are supported:
@@ -57,15 +56,7 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
     """
 
-    def __init__(
-        self,
-        image: npt.NDArray[np.uint8],
-        substrate: SubstTypeVar,
-        roughness_type: str,
-        delta: float,
-        *,
-        tempmatch: tuple[tuple[int, int], float] | None = None,
-    ):
+    def __init__(self, image, substrate, roughness_type, delta, *, tempmatch=None):
         if roughness_type not in ROUGHNESS_TYPES:
             raise ValueError("Unknown type of roughness: %s" % roughness_type)
         if not isinstance(delta, float):
@@ -77,7 +68,7 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
         self.delta = delta
 
     @abc.abstractmethod
-    def surface(self) -> npt.NDArray[np.int32]:
+    def surface(self):
         """Coating layer surface points.
 
         Returns
@@ -89,7 +80,7 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
         ...
 
     @abc.abstractmethod
-    def uniform_layer(self) -> npt.NDArray[np.float_]:
+    def uniform_layer(self):
         """Imaginary uniform layer points.
 
         Returns
@@ -103,7 +94,7 @@ class IfdRoughnessBase(CoatingLayerBase[SubstTypeVar, DataTypeVar]):
         ...
 
     @attrcache("_roughness")
-    def roughness(self) -> tuple[float, npt.NDArray[np.float_]]:
+    def roughness(self):
         """Surface roughness of the coating layer.
 
         Returns
@@ -146,7 +137,7 @@ class RectIfdRoughnessData:
     Roughness: float
 
 
-class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
+class RectIfdRoughness(IfdRoughnessBase):
     """Measure layer surface roughness over rectangular substrate.
 
     Parameters
@@ -204,14 +195,14 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
 
     def __init__(
         self,
-        image: npt.NDArray[np.uint8],
-        substrate: RectSubstrate,
-        roughness_type: str,
-        delta: float,
-        opening_ksize: tuple[int, int],
-        reconstruct_radius: int,
+        image,
+        substrate,
+        roughness_type,
+        delta,
+        opening_ksize,
+        reconstruct_radius,
         *,
-        tempmatch: tuple[tuple[int, int], float] | None = None,
+        tempmatch=None,
     ):
         if not all(i == 0 or (i > 0 and i % 2 == 1) for i in opening_ksize):
             raise ValueError("Kernel size must be zero or odd.")
@@ -221,7 +212,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         self.opening_ksize = opening_ksize
         self.reconstruct_radius = reconstruct_radius
 
-    def valid(self) -> bool:
+    def valid(self):
         """Check if the coating layer is valid.
 
         The coating layer is invalid if the capillary bridge is not ruptured.
@@ -245,7 +236,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         return bool(np.any(np.all(roi_binimg, axis=1)))
 
     @attrcache("_extracted_layer")
-    def extract_layer(self) -> npt.NDArray[np.bool_]:
+    def extract_layer(self):
         """Extract the coating layer region from the target image.
 
         Returns
@@ -301,12 +292,12 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
 
         return layer_mask
 
-    def substrate_contour(self) -> npt.NDArray[np.int_]:
+    def substrate_contour(self):
         """Return :attr:`substrate`'s contour in :attr:`image`."""
         return self.substrate.contour() + self.substrate_point()
 
     @attrcache("_interface_indices")
-    def interface_indices(self) -> npt.NDArray[np.int_]:
+    def interface_indices(self):
         """Return indices of the substrate contour for the solid-liquid interface.
 
         The interface points can be retrieved by slicing the substrate contour with
@@ -337,7 +328,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         return idx
 
     @attrcache("_surface")
-    def surface(self) -> npt.NDArray[np.int32]:
+    def surface(self):
         """See :meth:`IfdRoughnessBase.surface`."""
         idxs = self.interface_indices()
         if len(idxs) == 0:
@@ -355,7 +346,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         return np.squeeze(cnt[I0 : I1 + 1], axis=1)
 
     @attrcache("_uniform_layer")
-    def uniform_layer(self) -> npt.NDArray[np.float_]:
+    def uniform_layer(self):
         """See :meth:`IfdRoughnessBase.uniform_layer`."""
         idxs = self.interface_indices()
         if len(idxs) == 0:
@@ -367,7 +358,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         (t,) = root(partial(_uniform_layer_area, subst=subst_cnt, x0=A), [0]).x
         return np.squeeze(parallel_curve(subst_cnt, t), axis=1)
 
-    def analyze(self) -> RectIfdRoughnessData:
+    def analyze(self):
         """Return analysis result.
 
         Returns
@@ -376,7 +367,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         """
         return self.DataType(self.roughness()[0])
 
-    def draw(self, pairs_dist: float = 20.0) -> npt.NDArray[np.uint8]:
+    def draw(self, pairs_dist=20.0):
         """Visualize the analysis result.
 
         Draws the surface, the uniform layer, and the roughness pairs.
@@ -387,7 +378,7 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
             Distance between the roughness pairs in the IFD parameter space.
             Decreasing this value increases the density of pairs.
         """
-        image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB).astype(np.uint8)
+        image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         if not self.valid():
             return image
 
