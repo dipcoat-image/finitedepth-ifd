@@ -6,9 +6,14 @@
 DipCoatImage-FiniteDepth-IFD documentation
 ==========================================
 
+API reference
+-------------
+
+.. automodule:: finitedepth_ifd
+    :members:
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

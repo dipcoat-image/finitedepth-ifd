@@ -25,6 +25,7 @@ jobs:
       - name: lint with flake8
         run: |
           flake8
+          flake8 --doctests --extend-ignore=E203,E701,F821
 
       - name: lint with black
         run: |
@@ -63,7 +64,7 @@ jobs:
           pip install . mypy
 
       - name: run mypy check
-        run: mypy src
+        run: mypy
 
   doc:
 

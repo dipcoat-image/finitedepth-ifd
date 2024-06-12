@@ -13,15 +13,16 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 dependencies = [
-    "dipcoatimage-finitedepth >= 2.0.4",
-    "curvesimilarities >= 0.1.2"
+    "dipcoatimage-finitedepth >= 2.0.5",
+    "curvesimilarities >= 0.1.5"
 ]
 
 [project.optional-dependencies]
 doc = [
-    "furo",
     "sphinx",
     "numpydoc",
+    "pydata-sphinx-theme",
+    "matplotlib",
 ]
 dev = [
     "flake8",
@@ -54,10 +55,7 @@ ignore-path = [
 ]
 
 [tool.mypy]
-namespace_packages = true
-explicit_package_bases = true
-exclude = ["build"]
-plugins = ["numpy.typing.mypy_plugin"]
+packages = "finitedepth_ifd"
 
 [tool.pytest.ini_options]
 doctest_optionflags = [
