@@ -12,10 +12,30 @@ description = "Measure finite depth dip coating roughness with integral Fréchet
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Typing :: Typed",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "dipcoatimage-finitedepth >= 2.0.5",
     "curvesimilarities >= 0.1.5"
 ]
+
+[project.urls]
+homepage = "https://github.com/dipcoat-image/finitedepth-ifd"
+source = "https://github.com/dipcoat-image/finitedepth-ifd"
+documentation = "https://dipcoatimage-finitedepth-ifd.readthedocs.io"
 
 [project.optional-dependencies]
 doc = [
@@ -35,6 +55,9 @@ dev = [
     "dipcoatimage-finitedepth-ifd[doc]",
 ]
 
+[project.entry-points."finitedepth.coatinglayers"]
+RectIfdRoughness = "finitedepth_ifd:RectIfdRoughness"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
@@ -47,11 +70,9 @@ in-place = true
 black = true
 
 [tool.doc8]
-ignore = ["D004"]
 ignore-path = [
     "src/*.egg-info",
     "doc/build",
-    "doc/source/*.txt"
 ]
 
 [tool.mypy]
@@ -63,4 +84,4 @@ doctest_optionflags = [
     "IGNORE_EXCEPTION_DETAIL",
     "ELLIPSIS",
 ]
-addopts = "--ignore-glob=doc/**/*.py --doctest-modules --doctest-glob=*.rst"
+addopts = "--ignore=doc --doctest-modules"
