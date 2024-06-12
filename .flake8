@@ -9,3 +9,4 @@ exclude =
 docstring-convention = numpy
 per-file-ignores =
     doc/**:D
+    tests/**:D

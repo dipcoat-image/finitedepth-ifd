@@ -38,6 +38,9 @@ source = "https://github.com/dipcoat-image/finitedepth-ifd"
 documentation = "https://dipcoatimage-finitedepth-ifd.readthedocs.io"
 
 [project.optional-dependencies]
+test = [
+    "pytest",
+]
 doc = [
     "sphinx",
     "numpydoc",
@@ -84,4 +87,4 @@ doctest_optionflags = [
     "IGNORE_EXCEPTION_DETAIL",
     "ELLIPSIS",
 ]
-addopts = "--ignore=doc --doctest-modules"
+addopts = "--ignore=doc --doctest-modules --import-mode=importlib"

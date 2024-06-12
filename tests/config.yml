@@ -1,0 +1,24 @@
+test:
+    type: CoatingImage
+    referencePath: $FINITEDEPTH_TEST_SAMPLEPATH/ref.png
+    targetPath: $FINITEDEPTH_TEST_SAMPLEPATH/coat.png
+    reference:
+        parameters:
+            templateROI: [10, 10, 1250, 200]
+            substrateROI: [100, 100, 1200, 500]
+    substrate:
+      type: RectSubstrate
+      parameters:
+        sigma: 3.0
+        rho_thres: 1.0
+        theta_thres: 0.01
+    layer:
+      type: RectIfdRoughness
+      parameters:
+        roughness_type: "arithmetic"
+        delta: 5.0
+        opening_ksize: [1, 1]
+        reconstruct_radius: 50
+    output:
+        layerImage: $FINITEDEPTH_TEST_TEMPATH/foo.jpg
+        layerData: $FINITEDEPTH_TEST_TEMPATH/foo.csv
