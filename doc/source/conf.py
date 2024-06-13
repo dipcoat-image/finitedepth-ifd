@@ -45,11 +45,9 @@ numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
 plot_include_source = True
-plot_pre_code = """
-import cv2
-from finitedepth import *
-from finitedepth_ifd import *
-"""
+
+with open("plot_pre_code.py", "r") as f:
+    plot_pre_code = f.read()
 
 
 def setup(app):

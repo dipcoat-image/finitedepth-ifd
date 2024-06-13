@@ -175,6 +175,9 @@ class RectIfdRoughness(IfdRoughnessBase):
 
     Examples
     --------
+    .. note::
+        For every example in this class, the following code is assumed to be run before.
+
     Construct the substrate instance first.
 
     >>> ref_img = cv2.imread(get_sample_path("ref.png"), cv2.IMREAD_GRAYSCALE)
@@ -197,10 +200,12 @@ class RectIfdRoughness(IfdRoughnessBase):
     ...     50,
     ... )
 
-    Visualize the coating layer.
+    Analyze and visualize the coating layer.
 
-    >>> import matplotlib.pyplot as plt #doctest: +SKIP
-    >>> plt.imshow(coat.draw()) #doctest: +SKIP
+    >>> coat.analyze()
+    RectIfdRoughnessData(Roughness=40.19...)
+    >>> import matplotlib.pyplot as plt  # doctest: +SKIP
+    >>> plt.imshow(coat.draw())  # doctest: +SKIP
     """
 
     DataType = RectIfdRoughnessData
@@ -331,6 +336,18 @@ class RectIfdRoughness(IfdRoughnessBase):
         --------
         substrate_contour : The substrate contour which can be sliced.
 
+        Examples
+        --------
+        .. only:: doctest
+
+            >>> coat = getfixture('RectIfdRoughness_setup')
+
+        >>> i0, i1 = coat.interface_indices()
+        >>> interface = coat.substrate_contour()[i0:i1]
+        >>> import matplotlib.pyplot as plt  # doctest: +SKIP
+        >>> plt.imshow(coat.image, cmap="gray")  # doctest: +SKIP
+        >>> plt.plot(*interface.transpose(2, 0, 1))  # doctest: +SKIP
+
         Notes
         -----
         The interface is detected by finding the points on the substrate contour which
@@ -347,7 +364,14 @@ class RectIfdRoughness(IfdRoughnessBase):
 
     @attrcache("_surface")
     def surface(self):
-        """See :meth:`IfdRoughnessBase.surface`."""
+        """See :meth:`IfdRoughnessBase.surface`.
+
+        Examples
+        --------
+        >>> import matplotlib.pyplot as plt  # doctest: +SKIP
+        >>> plt.imshow(coat.image, cmap="gray")  # doctest: +SKIP
+        >>> plt.plot(*coat.surface().T, color="tab:red")  # doctest: +SKIP
+        """
         idxs = self.interface_indices()
         if len(idxs) == 0:
             return np.empty((0, 2), dtype=np.int32)
@@ -365,7 +389,14 @@ class RectIfdRoughness(IfdRoughnessBase):
 
     @attrcache("_uniform_layer")
     def uniform_layer(self):
-        """See :meth:`IfdRoughnessBase.uniform_layer`."""
+        """See :meth:`IfdRoughnessBase.uniform_layer`.
+
+        Examples
+        --------
+        >>> import matplotlib.pyplot as plt  # doctest: +SKIP
+        >>> plt.imshow(coat.image, cmap="gray")  # doctest: +SKIP
+        >>> plt.plot(*coat.uniform_layer().T, color="tab:red")  # doctest: +SKIP
+        """
         idxs = self.interface_indices()
         if len(idxs) == 0:
             return np.empty((0, 2), dtype=np.int32)

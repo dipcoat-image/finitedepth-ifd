@@ -8,6 +8,7 @@ exclude =
 # flake-docstrings
 docstring-convention = numpy
 per-file-ignores =
-    **/*.pyi:D,E301,E302
-    doc/**:D
-    tests/**:D
+    *.pyi:D,E301,E302
+    src/conftest.py:D
+    doc/*:D
+    tests/*:D
