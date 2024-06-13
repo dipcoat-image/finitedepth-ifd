@@ -13,10 +13,12 @@ A [DipCoatImage-FiniteDepth](https://pypi.org/project/dipcoatimage-finitedepth/)
 
 ## Usage
 
-Subclass `IfdRoughnessBase` with your custom coating layer detection algorithms.
-`RectIfdRoughness` implements the roughness of coating layer over substrate with rectangular cross section.
+- Use `RectIfdRoughness` for substrate with rectangular cross section.
+- Define your own class by subclassing `IfdRoughnessBase`.
 
-The command-line analysis provided by DipCoatImage-FiniteDepth is also applicable. An YAML example of the configuration file is:
+Refer to the documentation for the API reference.
+
+The command-line analysis is also applicable. An YAML example of the configuration file is:
 
 ```
 data:
@@ -29,6 +31,8 @@ data:
       opening_ksize: [1, 1]
       reconstruct_radius: 50
 ```
+
+Refer to the DipCoatImage-FiniteDepth package for more information.
 
 ## Installation
 

@@ -24,6 +24,16 @@ extensions = [
 autodoc_typehints = "none"
 autodoc_member_order = "bysource"
 
+
+def strip_module_docstring_firstline(app, what, name, obj, options, lines):
+    """Make autodoc ignore first line from module docstring.
+
+    The first line gives module description, which is already provided.
+    """
+    if what == "module" and name == "finitedepth_ifd":
+        lines.pop(0)
+
+
 intersphinx_mapping = {
     "finitedepth": ("https://dipcoatimage-finitedepth.readthedocs.io/en/latest", None),
     "curvesimilarities": ("https://curvesimilarities.readthedocs.io/en/latest", None),
@@ -40,6 +50,11 @@ import cv2
 from finitedepth import *
 from finitedepth_ifd import *
 """
+
+
+def setup(app):
+    app.connect("autodoc-process-docstring", strip_module_docstring_firstline)
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
