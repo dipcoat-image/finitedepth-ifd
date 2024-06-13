@@ -46,6 +46,8 @@ class IfdRoughnessBase(CoatingLayerBase):
     image, substrate
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
     roughness_type : {'arithmetic', 'quadratic'}
+        The type of roughness to be computed.
+        Refer to :meth:`roughness` for more explanation.
     delta : double
         The maximum distance between the Steiner points to compute the roughness.
         Refer to :meth:`roughness` for more explanation.
@@ -97,6 +99,16 @@ class IfdRoughnessBase(CoatingLayerBase):
     def roughness(self):
         """Surface roughness of the coating layer.
 
+        The roughness is defined as the similarity between :meth:`surface` and
+        :meth:`uniform_layer`, whose type is determined by the :attr:`roughness_type`
+        attribute.
+
+        - `'arithmetic'` : Average Fréchet distance.
+        - `'quadratic'` : Quadratic average Fréchet distance.
+
+        The :attr:`delta` attribute determines the approximation accuracy. Refer to the
+        See Also section for more details.
+
         Returns
         -------
         roughness : double
@@ -112,8 +124,8 @@ class IfdRoughnessBase(CoatingLayerBase):
 
         Notes
         -----
-        The roughness is acquired by computing the similarity between :meth:`surface`
-        and :meth:`uniform_layer`.
+        The arithmetic and quadratic average Fréchet distances are computed by taking
+        average along the optimal warping path of the integral Fréchet distance.
         """
         if self.roughness_type == "arithmetic":
             roughness, path = afd_owp(self.surface(), self.uniform_layer(), self.delta)
@@ -138,7 +150,7 @@ class RectIfdRoughnessData:
 
 
 class RectIfdRoughness(IfdRoughnessBase):
-    """Measure layer surface roughness over rectangular substrate.
+    """Measure coating layer surface roughness over rectangular substrate.
 
     Parameters
     ----------
@@ -293,7 +305,13 @@ class RectIfdRoughness(IfdRoughnessBase):
         return layer_mask
 
     def substrate_contour(self):
-        """Return :attr:`substrate`'s contour in :attr:`image`."""
+        """Return :attr:`substrate`'s contour in :attr:`image`.
+
+        Returns
+        -------
+        ndarray
+            Array of substrate contour points.
+        """
         return self.substrate.contour() + self.substrate_point()
 
     @attrcache("_interface_indices")
@@ -301,7 +319,7 @@ class RectIfdRoughness(IfdRoughnessBase):
         """Return indices of the substrate contour for the solid-liquid interface.
 
         The interface points can be retrieved by slicing the substrate contour with
-        there indices.
+        the indices.
 
         Returns
         -------
