@@ -7,6 +7,8 @@
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/dipcoatimage-finitedepth-ifd.svg)](https://pypi.python.org/pypi/dipcoatimage-finitedepth-ifd/)
 [![PyPI Version](https://img.shields.io/pypi/v/dipcoatimage-finitedepth-ifd.svg)](https://pypi.python.org/pypi/dipcoatimage-finitedepth-ifd/)
 
+![Header image](https://dipcoatimage-finitedepth-ifd.readthedocs.io/en/latest/_images/plot-header.png)
+
 A [DipCoatImage-FiniteDepth](https://pypi.org/project/dipcoatimage-finitedepth/) plugin to measure roughness with integral Fréchet distance.
 
 ## Usage
@@ -20,12 +22,12 @@ The command-line analysis provided by DipCoatImage-FiniteDepth is also applicabl
 data:
   ...
   layer:
-  type: RectIfdRoughness
-  parameters:
-    roughness_type: "arithmetic"
-    delta: 5.0
-    opening_ksize: [1, 1]
-    reconstruct_radius: 50
+    type: RectIfdRoughness
+    parameters:
+      roughness_type: "arithmetic"
+      delta: 5.0
+      opening_ksize: [1, 1]
+      reconstruct_radius: 50
 ```
 
 ## Installation
