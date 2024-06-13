@@ -35,9 +35,11 @@ numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 
 plot_include_source = True
-
-with open("plot_pre_code") as f:
-    plot_pre_code = f.read()
+plot_pre_code = """
+import cv2
+from finitedepth import *
+from finitedepth_ifd import *
+"""
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -51,3 +53,6 @@ html_theme_options = {
     },
     "show_toc_level": 2,
 }
+
+plot_html_show_formats = False
+plot_html_show_source_link = False

@@ -6,6 +6,9 @@
 DipCoatImage-FiniteDepth-IFD documentation
 ==========================================
 
+.. plot:: plot-header.py
+    :include-source: False
+
 API reference
 -------------
 
