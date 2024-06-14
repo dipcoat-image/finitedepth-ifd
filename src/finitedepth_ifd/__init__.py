@@ -454,33 +454,13 @@ class RectIfdRoughness(IfdRoughnessBase):
         u = np.linspace(0, 1, int(path_len // pairs_dist))
         pairs = np.stack(splev(u, tck)).T
 
-        surf_seg_vec = np.diff(self.surface(), axis=0)
-        surf_seg_len = np.linalg.norm(surf_seg_vec, axis=-1)
-        surf_seg_unitvec = surf_seg_vec / surf_seg_len[..., np.newaxis]
-        surf_vert = np.cumsum(surf_seg_len)
-        pairs_surf_vert_idx = np.searchsorted(surf_vert, pairs[:, 0])
-
-        p = self.surface()[pairs_surf_vert_idx]
-        t = pairs[:, 0] - np.insert(surf_vert, 0, 0)[pairs_surf_vert_idx]
-        u = surf_seg_unitvec[pairs_surf_vert_idx]
-        pairs_surf_pt = (p + t[..., np.newaxis] * u).astype(np.int32)
-
-        ul_seg_vec = np.diff(self.uniform_layer(), axis=0)
-        ul_seg_len = np.linalg.norm(ul_seg_vec, axis=-1)
-        ul_seg_unitvec = ul_seg_vec / ul_seg_len[..., np.newaxis]
-        ul_vert = np.cumsum(ul_seg_len)
-        pairs_ul_vert_idx = np.searchsorted(ul_vert, pairs[:, 1])
-
-        q = self.uniform_layer()[pairs_ul_vert_idx]
-        s = pairs[:, 1] - np.insert(ul_vert, 0, 0)[pairs_ul_vert_idx]
-        v = ul_seg_unitvec[pairs_ul_vert_idx]
-        pairs_ul_pt = (q + s[..., np.newaxis] * v).astype(np.int32)
-
+        pairs_surf_pt = _polyline_sample_points(self.surface(), pairs[:, 0])
+        pairs_ul_pt = _polyline_sample_points(self.uniform_layer(), pairs[:, 1])
         pairs_pts = np.stack([pairs_surf_pt, pairs_ul_pt])[np.newaxis, ...]
 
         cv2.polylines(
             image,
-            pairs_pts.transpose(2, 1, 0, 3),
+            pairs_pts.astype(np.int32).transpose(2, 1, 0, 3),
             isClosed=False,
             color=(0, 255, 0),
             thickness=1,
@@ -492,3 +472,15 @@ class RectIfdRoughness(IfdRoughnessBase):
 def _uniform_layer_area(thickness, subst, x0):
     cnt = np.concatenate([subst, np.flip(parallel_curve(subst, thickness[0]), axis=0)])
     return cv2.contourArea(cnt.astype(np.float32)) - x0
+
+
+def _polyline_sample_points(vert, pt_param):
+    seg_vec = np.diff(vert, axis=0)
+    seg_len = np.linalg.norm(seg_vec, axis=-1)
+    vert_param = np.insert(np.cumsum(seg_len), 0, 0)
+    pt_param = np.clip(pt_param, vert_param[0], vert_param[-1])
+
+    pt_vert_idx = np.clip(np.searchsorted(vert_param, pt_param) - 1, 0, len(vert) - 2)
+    t = pt_param - vert_param[pt_vert_idx]
+    seg_unitvec = seg_vec / seg_len[..., np.newaxis]
+    return vert[pt_vert_idx] + t[..., np.newaxis] * seg_unitvec[pt_vert_idx]
