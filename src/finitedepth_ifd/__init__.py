@@ -17,7 +17,6 @@ from curvesimilarities import afd_owp, qafd_owp  # type: ignore[import-untyped]
 from finitedepth import CoatingLayerBase
 from finitedepth.cache import attrcache
 from finitedepth.coatinglayer import parallel_curve
-from scipy.interpolate import splev, splprep  # type: ignore
 from scipy.optimize import root  # type: ignore
 
 __all__ = [
@@ -450,9 +449,8 @@ class RectIfdRoughness(IfdRoughnessBase):
 
         _, path = self.roughness()
         path_len = np.sum(np.linalg.norm(np.diff(path, axis=0), axis=-1), axis=0)
-        tck, _ = splprep(path.T, k=1, s=0)
-        u = np.linspace(0, 1, int(path_len // pairs_dist))
-        pairs = np.stack(splev(u, tck)).T
+        u = np.linspace(0, path_len, int(path_len // pairs_dist))
+        pairs = _polyline_sample_points(path, u)
 
         pairs_surf_pt = _polyline_sample_points(self.surface(), pairs[:, 0])
         pairs_ul_pt = _polyline_sample_points(self.uniform_layer(), pairs[:, 1])
