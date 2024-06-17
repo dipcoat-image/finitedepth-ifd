@@ -131,7 +131,7 @@ class IfdRoughnessBase(CoatingLayerBase):
         elif self.roughness_type == "quadratic":
             roughness, path = qafd_owp(self.surface(), self.uniform_layer(), self.delta)
         else:
-            roughness, path = np.nan, np.empty((0, 2), dtype=np.float_)
+            roughness, path = np.nan, np.empty((0, 2), dtype=np.float64)
         return float(roughness), path
 
 
@@ -141,10 +141,13 @@ class RectIfdRoughnessData:
 
     Attributes
     ----------
-    Roughness : float
+    AverageThickness : double
+        Average thickness of the coating layer.
+    Roughness : double
         Coating layer roughness.
     """
 
+    AverageThickness: float
     Roughness: float
 
 
@@ -202,7 +205,7 @@ class RectIfdRoughness(IfdRoughnessBase):
     Analyze and visualize the coating layer.
 
     >>> coat.analyze()
-    RectIfdRoughnessData(Roughness=40.19...)
+    RectIfdRoughnessData(AverageThickness=50.25..., Roughness=40.19...)
     >>> import matplotlib.pyplot as plt  # doctest: +SKIP
     >>> plt.imshow(coat.draw())  # doctest: +SKIP
     """
@@ -386,7 +389,28 @@ class RectIfdRoughness(IfdRoughnessBase):
 
         return np.squeeze(cnt[I0 : I1 + 1], axis=1)
 
-    @attrcache("_uniform_layer")
+    @attrcache("_average_thickness")
+    def average_thickness(self):
+        """Average thickness of the coating layer.
+
+        Examples
+        --------
+        .. only:: doctest
+
+            >>> coat = getfixture('RectIfdRoughness_setup')
+
+        >>> coat.average_thickness()
+        50.25...
+        """
+        idxs = self.interface_indices()
+        if len(idxs) == 0:
+            return np.nan
+        i0, i1 = idxs
+        subst_cnt = self.substrate_contour()[i0:i1]
+        A = np.count_nonzero(self.extract_layer())
+        (t,) = root(partial(_uniform_layer_area, subst=subst_cnt, x0=A), [0]).x
+        return float(t)
+
     def uniform_layer(self):
         """See :meth:`IfdRoughnessBase.uniform_layer`.
 
@@ -401,9 +425,9 @@ class RectIfdRoughness(IfdRoughnessBase):
             return np.empty((0, 2), dtype=np.int32)
         i0, i1 = idxs
         subst_cnt = self.substrate_contour()[i0:i1]
-
-        A = np.count_nonzero(self.extract_layer())
-        (t,) = root(partial(_uniform_layer_area, subst=subst_cnt, x0=A), [0]).x
+        t = self.average_thickness()
+        if np.isnan(t):
+            return np.empty((0, 2), dtype=np.int32)
         return np.squeeze(parallel_curve(subst_cnt, t), axis=1)
 
     def analyze(self):
@@ -413,7 +437,7 @@ class RectIfdRoughness(IfdRoughnessBase):
         -------
         :class:`RectIfdRoughnessData`
         """
-        return self.DataType(self.roughness()[0])
+        return self.DataType(self.average_thickness(), self.roughness()[0])
 
     def draw(self, pairs_dist=20.0):
         """Visualize the analysis result.
