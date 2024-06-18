@@ -57,7 +57,7 @@ dev = [
     "docformatter",
     "doc8",
     "mypy",
-    "dipcoatimage-finitedepth-ifd[doc]",
+    "dipcoatimage-finitedepth-ifd[test,doc]",
 ]
 
 [project.entry-points."finitedepth.coatinglayers"]
