@@ -13,7 +13,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from curvesimilarities import afd_owp, qafd_owp  # type: ignore[import-untyped]
+from curvesimilarities import qafd_owp  # type: ignore[import-untyped]
 from finitedepth import CoatingLayerBase
 from finitedepth.cache import attrcache
 from finitedepth.coatinglayer import parallel_curve
@@ -26,27 +26,17 @@ __all__ = [
 ]
 
 
-ROUGHNESS_TYPES = (
-    "arithmetic",
-    "quadratic",
-)
-
-
 class IfdRoughnessBase(CoatingLayerBase):
-    """Base class to measure layer surface roughness with integral Fréchet distance.
+    """Base class to measure the coating layer roughness with integral Fréchet distance.
 
-    The following types of roughness are supported:
-
-    - Arithmetic roughness :math:`R_a`
-    - Quadratic mean roughness :math:`R_q`
+    The :class:`IfdRoughnessBase` generalizes the :math:`R_q` roughness [#]_ into
+    arbitrary geometries by computing the quadratic mean of the integral Fréchet
+    distance. See :meth:`roughness` for more information.
 
     Parameters
     ----------
     image, substrate
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
-    roughness_type : {'arithmetic', 'quadratic'}
-        The type of roughness to be computed.
-        Refer to :meth:`roughness` for more explanation.
     delta : double
         The maximum distance between the Steiner points to compute the roughness.
         Refer to :meth:`roughness` for more explanation.
@@ -55,17 +45,18 @@ class IfdRoughnessBase(CoatingLayerBase):
     ----------------
     tempmatch : tuple, optional
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
+
+    References
+    ----------
+    .. [#] https://en.wikipedia.org/wiki/Surface_roughness
     """
 
-    def __init__(self, image, substrate, roughness_type, delta, *, tempmatch=None):
-        if roughness_type not in ROUGHNESS_TYPES:
-            raise ValueError("Unknown type of roughness: %s" % roughness_type)
+    def __init__(self, image, substrate, delta, *, tempmatch=None):
         if not isinstance(delta, float):
             raise TypeError("delta must be a double-precision float.")
         if not delta > 0:
             raise TypeError("delta must be a positive number.")
         super().__init__(image, substrate, tempmatch=tempmatch)
-        self.roughness_type = roughness_type
         self.delta = delta
 
     @abc.abstractmethod
@@ -98,12 +89,8 @@ class IfdRoughnessBase(CoatingLayerBase):
     def roughness(self):
         """Surface roughness of the coating layer.
 
-        The roughness is defined as the similarity between :meth:`surface` and
-        :meth:`uniform_layer`, whose type is determined by the :attr:`roughness_type`
-        attribute.
-
-        - `'arithmetic'` : Average Fréchet distance.
-        - `'quadratic'` : Quadratic average Fréchet distance.
+        Roughness is similarity between :meth:`surface` and :meth:`uniform_layer`.
+        Here, we choose quadratic average Fréchet distance as the similarity.
 
         The :attr:`delta` attribute determines the approximation accuracy. Refer to the
         See Also section for more details.
@@ -118,20 +105,9 @@ class IfdRoughnessBase(CoatingLayerBase):
 
         See Also
         --------
-        curvesimilarities.averagefrechet.afd : Average Fréchet distance.
         curvesimilarities.averagefrechet.qafd : Quadratic average Fréchet distance.
-
-        Notes
-        -----
-        The arithmetic and quadratic average Fréchet distances are computed by taking
-        average along the optimal warping path of the integral Fréchet distance.
         """
-        if self.roughness_type == "arithmetic":
-            roughness, path = afd_owp(self.surface(), self.uniform_layer(), self.delta)
-        elif self.roughness_type == "quadratic":
-            roughness, path = qafd_owp(self.surface(), self.uniform_layer(), self.delta)
-        else:
-            roughness, path = np.nan, np.empty((0, 2), dtype=np.float64)
+        roughness, path = qafd_owp(self.surface(), self.uniform_layer(), self.delta)
         return float(roughness), path
 
 
@@ -160,8 +136,6 @@ class RectIfdRoughness(IfdRoughnessBase):
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
     substrate : :class:`RectSubstrate <finitedepth.RectSubstrate>`.
         Substrate instance.
-    roughness_type, delta
-        See :class:`IfdRoughnessBase`.
     opening_ksize : tuple of int
         Kernel size for morphological opening operation. Must be zero or odd.
     reconstruct_radius : int
@@ -196,7 +170,6 @@ class RectIfdRoughness(IfdRoughnessBase):
     >>> coat = RectIfdRoughness(
     ...     cv2.threshold(target_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1],
     ...     subst,
-    ...     "arithmetic",
     ...     5.0,
     ...     (1, 1),
     ...     50,
@@ -205,7 +178,7 @@ class RectIfdRoughness(IfdRoughnessBase):
     Analyze and visualize the coating layer.
 
     >>> coat.analyze()
-    RectIfdRoughnessData(AverageThickness=50.25..., Roughness=40.19...)
+    RectIfdRoughnessData(AverageThickness=50.25..., Roughness=44.91...)
     >>> import matplotlib.pyplot as plt  # doctest: +SKIP
     >>> plt.imshow(coat.draw())  # doctest: +SKIP
     """
@@ -216,7 +189,6 @@ class RectIfdRoughness(IfdRoughnessBase):
         self,
         image,
         substrate,
-        roughness_type,
         delta,
         opening_ksize,
         reconstruct_radius,
@@ -227,7 +199,7 @@ class RectIfdRoughness(IfdRoughnessBase):
             raise ValueError("Kernel size must be zero or odd.")
         if reconstruct_radius < 0:
             raise ValueError("Reconstruct radius must be zero or positive.")
-        super().__init__(image, substrate, roughness_type, delta, tempmatch=tempmatch)
+        super().__init__(image, substrate, delta, tempmatch=tempmatch)
         self.opening_ksize = opening_ksize
         self.reconstruct_radius = reconstruct_radius
 

@@ -10,13 +10,11 @@ class IfdRoughnessBase(
     CoatingLayerBase[SubstTypeVar, DataTypeVar], metaclass=abc.ABCMeta
 ):
     DataType: type[DataTypeVar]
-    roughness_type: str
     delta: float
     def __init__(
         self,
         image: npt.NDArray[np.uint8],
         substrate: SubstTypeVar,
-        roughness_type: str,
         delta: float,
         *,
         tempmatch: tuple[tuple[int, int], float] | None = None,
@@ -41,7 +39,6 @@ class RectIfdRoughness(IfdRoughnessBase[RectSubstrate, RectIfdRoughnessData]):
         self,
         image: npt.NDArray[np.uint8],
         substrate: RectSubstrate,
-        roughness_type: str,
         delta: float,
         opening_ksize: tuple[int, int],
         reconstruct_radius: int,
