@@ -26,7 +26,6 @@ data:
   layer:
     type: RectIfdRoughness
     parameters:
-      roughness_type: "arithmetic"
       delta: 5.0
       opening_ksize: [1, 1]
       reconstruct_radius: 50
