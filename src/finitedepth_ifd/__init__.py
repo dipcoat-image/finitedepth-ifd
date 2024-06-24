@@ -29,9 +29,9 @@ __all__ = [
 class IfdRoughnessBase(CoatingLayerBase):
     """Base class to measure the coating layer roughness with integral Fréchet distance.
 
-    The :class:`IfdRoughnessBase` generalizes the :math:`R_q` roughness into arbitrary
-    geometries by computing the quadratic mean of the integral Fréchet distance. See
-    :meth:`roughness` for more information.
+    The :class:`IfdRoughnessBase` generalizes the :math:`R_q` roughness [#]_ into
+    arbitrary geometries by computing the quadratic mean of the integral Fréchet
+    distance. See :meth:`roughness` for more information.
 
     Parameters
     ----------
@@ -45,6 +45,10 @@ class IfdRoughnessBase(CoatingLayerBase):
     ----------------
     tempmatch : tuple, optional
         See :class:`CoatingLayerBase <finitedepth.CoatingLayerBase>`.
+
+    References
+    ----------
+    .. [#] https://en.wikipedia.org/wiki/Surface_roughness
     """
 
     def __init__(self, image, substrate, delta, *, tempmatch=None):
