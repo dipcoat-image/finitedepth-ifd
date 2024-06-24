@@ -16,7 +16,6 @@ target_img = cv2.imread(get_sample_path("coat.png"), cv2.IMREAD_GRAYSCALE)
 coat = RectIfdRoughness(
     cv2.threshold(target_img, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1],
     subst,
-    "arithmetic",
     5.0,
     (1, 1),
     50,
