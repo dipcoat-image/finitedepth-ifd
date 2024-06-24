@@ -14,6 +14,7 @@ from functools import partial
 import cv2
 import numpy as np
 from curvesimilarities import qafd_owp  # type: ignore[import-untyped]
+from curvesimilarities.util import sample_polyline  # type: ignore[import-untyped]
 from finitedepth import CoatingLayerBase
 from finitedepth.cache import attrcache
 from finitedepth.coatinglayer import parallel_curve
@@ -446,10 +447,10 @@ class RectIfdRoughness(IfdRoughnessBase):
         _, path = self.roughness()
         path_len = np.sum(np.linalg.norm(np.diff(path, axis=0), axis=-1), axis=0)
         u = np.linspace(0, path_len, int(path_len // pairs_dist))
-        pairs = _polyline_sample_points(path, u)
+        pairs = sample_polyline(path, u)
 
-        pairs_surf_pt = _polyline_sample_points(self.surface(), pairs[:, 0])
-        pairs_ul_pt = _polyline_sample_points(self.uniform_layer(), pairs[:, 1])
+        pairs_surf_pt = sample_polyline(self.surface(), pairs[:, 0])
+        pairs_ul_pt = sample_polyline(self.uniform_layer(), pairs[:, 1])
         pairs_pts = np.stack([pairs_surf_pt, pairs_ul_pt])[np.newaxis, ...]
 
         cv2.polylines(
@@ -466,15 +467,3 @@ class RectIfdRoughness(IfdRoughnessBase):
 def _uniform_layer_area(thickness, subst, x0):
     cnt = np.concatenate([subst, np.flip(parallel_curve(subst, thickness[0]), axis=0)])
     return cv2.contourArea(cnt.astype(np.float32)) - x0
-
-
-def _polyline_sample_points(vert, pt_param):
-    seg_vec = np.diff(vert, axis=0)
-    seg_len = np.linalg.norm(seg_vec, axis=-1)
-    vert_param = np.insert(np.cumsum(seg_len), 0, 0)
-    pt_param = np.clip(pt_param, vert_param[0], vert_param[-1])
-
-    pt_vert_idx = np.clip(np.searchsorted(vert_param, pt_param) - 1, 0, len(vert) - 2)
-    t = pt_param - vert_param[pt_vert_idx]
-    seg_unitvec = seg_vec / seg_len[..., np.newaxis]
-    return vert[pt_vert_idx] + t[..., np.newaxis] * seg_unitvec[pt_vert_idx]
