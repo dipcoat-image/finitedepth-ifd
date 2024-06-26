@@ -13,7 +13,7 @@ from functools import partial
 
 import cv2
 import numpy as np
-from curvesimilarities import qafd_owp  # type: ignore[import-untyped]
+from curvesimilarities import ifd_owp  # type: ignore[import-untyped]
 from curvesimilarities.util import sample_polyline  # type: ignore[import-untyped]
 from finitedepth import CoatingLayerBase
 from finitedepth.cache import attrcache
@@ -108,7 +108,10 @@ class IfdRoughnessBase(CoatingLayerBase):
         --------
         curvesimilarities.averagefrechet.qafd : Quadratic average Fréchet distance.
         """
-        roughness, path = qafd_owp(self.surface(), self.uniform_layer(), self.delta)
+        squared_ifd, path = ifd_owp(
+            self.surface(), self.uniform_layer(), self.delta, dist="squared_euclidean"
+        )
+        roughness = np.sqrt(squared_ifd / np.sum(path[-1]))
         return float(roughness), path
 
 
